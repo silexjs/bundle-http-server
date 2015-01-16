@@ -1,0 +1,31 @@
+{
+	"name": "silex-bundle-http-server",
+	"version": "0.0.1",
+	"description": "[SILEX][BUNDLE] Sets up an HTTP server",
+	"author": "Valentin Allaire <valentin@sitexw.fr>",
+	"license": "MIT",
+	"keywords": [
+		"http",
+		"server",
+		"silex",
+		"bundle"
+	],
+	"dependencies": {
+		"spaceload": "<2.0.0",
+		"silex-component-routing": "0.0.x"
+	},
+	"devDependencies": {},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/silexjs/bundle-http-serve.git"
+	},
+	"bugs": {
+		"url": "https://github.com/silexjs/bundle-http-serve/issues"
+	},
+	"homepage": "https://github.com/silexjs/bundle-http-serve",
+	"autoload": {
+		"psr-4": {
+			"Silex\\HttpServerBundle": "./"
+		}
+	}
+}
