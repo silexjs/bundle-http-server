@@ -1,6 +1,6 @@
 {
 	"name": "silex-bundle-http-server",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"description": "[SILEX][BUNDLE] Sets up an HTTP server",
 	"author": "Valentin Allaire <valentin@sitexw.fr>",
 	"license": "MIT",
