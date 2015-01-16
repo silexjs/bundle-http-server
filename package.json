@@ -12,7 +12,8 @@
 	],
 	"dependencies": {
 		"spaceload": "<2.0.0",
-		"silex-component-routing": "0.0.x"
+		"silex-component-routing": "0.0.x",
+		"silex-component-http": "0.0.x"
 	},
 	"devDependencies": {},
 	"repository": {
