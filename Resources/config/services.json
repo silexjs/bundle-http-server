@@ -9,7 +9,7 @@
 			"events": [
 				{ "listener": "kernel.ready", "method": "onKernelReady", "priority": 10 }
 			],
-			"priority": 10
+			"priority": 5
 		}
 	}
 }
