@@ -73,45 +73,49 @@ HttpServer.prototype = {
 				};
 				self.dispatcher.dispatch('http.server.resolve_controller', [request, response, controller], function(request, response, controller) {
 					try {
-						if(controller.routeName !== null) {
-							var bundle = self.container.get('kernel').getBundle(controller.bundle);
-							if(bundle !== null) {
-								var file = pa.join(bundle.dir, './Controller/'+controller.controller+'.js');
-								if(fs.existsSync(file) === true) {
-									var controllerClass = require(file);
-									if(controllerClass.prototype[controller.action] !== undefined) {
-										var end = function(variables) {
-											self.dispatchHttpResponse(request, response);
-										};
-										var controllerInstance = new controllerClass(self.container, request, response);
-										controllerInstance[controller.action](end, controller.variables);
+						if(response.hasResponse === true) {
+							self.dispatchHttpResponse(request, response);
+						} else {
+							if(controller.routeName !== null) {
+								var bundle = self.container.get('kernel').getBundle(controller.bundle);
+								if(bundle !== null) {
+									var file = pa.join(bundle.dir, './Controller/'+controller.controller+'.js');
+									if(fs.existsSync(file) === true) {
+										var controllerClass = require(file);
+										if(controllerClass.prototype[controller.action] !== undefined) {
+											var end = function(variables) {
+												self.dispatchHttpResponse(request, response);
+											};
+											var controllerInstance = new controllerClass(self.container, request, response);
+											controllerInstance[controller.action](end, controller.variables);
+										} else {
+											throw new ErrorHttpNotFoundAction(controller);
+										}
 									} else {
-										throw new ErrorHttpNotFoundAction(controller);
+										throw new ErrorHttpNotFoundController(controller, file);
 									}
 								} else {
-									throw new ErrorHttpNotFoundController(controller, file);
+									throw new ErrorHttpNotFoundBundle(controller);
 								}
 							} else {
-								throw new ErrorHttpNotFoundBundle(controller);
+								throw new ErrorHttpNotFound();
 							}
-						} else {
-							throw new ErrorHttpNotFound();
 						}
 					} catch(e) {
-						self.handleException(e, request, response);
+						self.handleError(e, request, response);
 					}
-				}, [self, 'handleException']);
+				}, [self, 'handleError']);
 			}
-		}, [this, 'handleException']);
+		}, [this, 'handleError']);
 	},
-	handleException: function(e, request, response) {
+	handleError: function(e, request, response) {
 		var self = this;
-		this.dispatcher.dispatch('http.server.exception', [e, request, response], function(e, request, response) {
+		this.dispatcher.dispatch('http.server.error', [e, request, response], function(e, request, response) {
 			if(response.hasResponse === false && self.debug === true) {
-				console.log('------------------------------------------------------------------- ERROR START');
+				console.log('----------------------------------------------------------------- ERROR (start)');
 				console.log(e.message);
 				console.log(e.stack);
-				console.log('--------------------------------------------------------------------- ERROR END');
+				console.log('----------------------------------------------------------------- ERROR (end)');
 			}
 			self.dispatchHttpResponse(request, response);
 		});
@@ -121,7 +125,7 @@ HttpServer.prototype = {
 			if(response.hasResponse === false) {
 				response.setHeader('Content-Type', 'text/plain');
 				response.statusCode = 500;
-				response.content = 'Internal Server Error';
+				response.content = 'Internal server error';
 				response.hasResponse = true;
 			}
 			
