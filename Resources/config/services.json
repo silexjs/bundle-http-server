@@ -3,8 +3,11 @@
 		"silex.http_server.service": {
 			"class": "Silex.HttpServerBundle.Services.HttpServer",
 			"arguments": [
+				{ "type": "service", "id": "kernel" },
 				{ "type": "service", "id": "kernel.container" },
-				{ "type": "service", "id": "kernel.dispatcher" }
+				{ "type": "service", "id": "kernel.dispatcher" },
+				{ "type": "service", "id": "kernel.config" },
+				{ "type": "service", "id": "kernel.log" }
 			],
 			"events": [
 				{ "listener": "kernel.ready", "method": "onKernelReady", "priority": 10 }

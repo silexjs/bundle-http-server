@@ -2,33 +2,44 @@ var pa = require('path');
 var fs = require('fs');
 
 var Server = USE('Silex.Component.Http.Server');
+
 var Request = USE('Silex.HttpServerBundle.Http.Request');
 var Response = USE('Silex.HttpServerBundle.Http.Response');
+
 var ErrorHttp = USE('Silex.HttpServerBundle.Error.Http');
 var ErrorHttpNotFound = USE('Silex.HttpServerBundle.Error.HttpNotFound');
-var ErrorHttpNotFoundBundle = USE('Silex.HttpServerBundle.Error.HttpNotFoundBundle');
-var ErrorHttpNotFoundController = USE('Silex.HttpServerBundle.Error.HttpNotFoundController');
-var ErrorHttpNotFoundAction = USE('Silex.HttpServerBundle.Error.HttpNotFoundAction');
 
 
-var HttpServer = function(container, dispatcher) {
+var HttpServer = function(kernel, container, dispatcher, config, log) {
+	this.kernel = kernel;
 	this.container = container;
 	this.dispatcher = dispatcher;
-	this.debug = this.container.get('kernel').debug;
+	this.config = config;
+	this.log = log;
+	this.debug = this.kernel.debug;
 };
 HttpServer.prototype = {
+	kernel: null,
 	container: null,
 	dispatcher: null,
+	config: null,
+	log: null,
+	debug: null,
+	
+	console: function(m) {
+		this.log.debug('Http.Server', m);
+	},
 	
 	onKernelReady: function(next) {
-		this.initServer(this.container.get('kernel.config').get('http.server'), function() {
+		this.initServer(this.config.get('http.server'), function() {
 			next();
 		});
 	},
 	initServer: function(config, callback) {
+		var self = this;
 		var server = new Server({
 			debug:	this.debug,
-			log:	function(m) { console.log('HTTP.SERVER: '+m); },
+			log:	function(m) { self.console(m); },
 		});
 		this.container.set('http.server', server);
 		if(config.defaultCertificate !== undefined && config.defaultCertificate.key !== undefined && config.defaultCertificate.cert !== undefined ) {
@@ -37,7 +48,6 @@ HttpServer.prototype = {
 		for(var i in config.ports) {
 			server.add(config.ports[i]);
 		}
-		var self = this;
 		this.dispatcher.dispatch('http.server.config', function() {
 			server.addEvent(function(req, res, secure) {
 				self.onHttpRequest(req, res, secure);
@@ -51,7 +61,7 @@ HttpServer.prototype = {
 	onHttpRequest: function(req, res, secure) {
 		if(this.debug === true) {
 			var d = new Date;
-			console.log('HTTP.SERVER: New request ('+d.toDateString()+' '+d.getHours()+':'+d.getMinutes()+':'+d.getSeconds()+'.'+d.getMilliseconds()+': '+req.url+')');
+			this.console('New request ('+d.toDateString()+' '+d.getHours()+':'+d.getMinutes()+':'+d.getSeconds()+'.'+d.getMilliseconds()+' | '+req.url+')');
 		}
 		var request = new Request(req, secure);
 		var response = new Response(res);
@@ -63,39 +73,31 @@ HttpServer.prototype = {
 			if(response.hasResponse === true) {
 				self.dispatchHttpResponse(request, response);
 			} else {
-				var controller = {
-					routeName: null,
-					route: null,
-					variables: {},
-					bundle: null,
-					controller: null,
-					action: null,
-				};
-				self.dispatcher.dispatch('http.server.resolve_controller', [request, response, controller], function(request, response, controller) {
+				self.dispatcher.dispatch('http.server.controller', [request, response], function(request, response) {
 					try {
 						if(response.hasResponse === true) {
 							self.dispatchHttpResponse(request, response);
 						} else {
-							if(controller.routeName !== null) {
-								var bundle = self.container.get('kernel').getBundle(controller.bundle);
+							if(request.controller.found === true) {
+								var bundle = self.kernel.getBundle(request.controller.bundle);
 								if(bundle !== null) {
-									var file = pa.join(bundle.dir, './Controller/'+controller.controller+'.js');
+									var file = pa.resolve(bundle.dir, './Controller/'+request.controller.controller+'Controller.js');
 									if(fs.existsSync(file) === true) {
 										var controllerClass = require(file);
-										if(controllerClass.prototype[controller.action] !== undefined) {
+										if(controllerClass.prototype[request.controller.action+'Action'] !== undefined) {
 											var end = function(variables) {
 												self.dispatchHttpResponse(request, response);
 											};
 											var controllerInstance = new controllerClass(self.container, request, response);
-											controllerInstance[controller.action](end, controller.variables);
+											controllerInstance[request.controller.action+'Action'](end, request.route.variables);
 										} else {
-											throw new ErrorHttpNotFoundAction(controller);
+											throw new Error('The action "'+request.controller.action+'" of the controller "'+request.controller.controller+'" does not exist. (config: "'+request.controller.bundle+':'+request.controller.controller+':'+request.controller.action+'")');
 										}
 									} else {
-										throw new ErrorHttpNotFoundController(controller, file);
+										throw new Error('The controller "'+request.controller.controller+'" does not exist. Path sought: "'+file+'". (config: "'+request.controller.bundle+':'+request.controller.controller+':'+request.controller.action+'")');
 									}
 								} else {
-									throw new ErrorHttpNotFoundBundle(controller);
+									throw new Error('The bundle "'+request.controller.bundle+'" does not exist. (config: "'+request.controller.bundle+':'+request.controller.controller+':'+request.controller.action+'")');
 								}
 							} else {
 								throw new ErrorHttpNotFound();
@@ -111,12 +113,7 @@ HttpServer.prototype = {
 	handleError: function(e, request, response) {
 		var self = this;
 		this.dispatcher.dispatch('http.server.error', [e, request, response], function(e, request, response) {
-			if(response.hasResponse === false && self.debug === true) {
-				console.log('----------------------------------------------------------------- ERROR (start)');
-				console.log(e.message);
-				console.log(e.stack);
-				console.log('----------------------------------------------------------------- ERROR (end)');
-			}
+			self.log.error('Http.Server', self.log.color.redBright(e.message)+"\n"+e.stack+"\n");
 			self.dispatchHttpResponse(request, response);
 		});
 	},
