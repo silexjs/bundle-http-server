@@ -1,8 +1,9 @@
 var ErrorHttp = USE('Silex.HttpServerBundle.Error.Http');
 
 
-var HttpNotFound = function(message, previous) {
-	ErrorHttp.call(this, 404, message || null, previous || null, {});
+var HttpNotFound = function(message) {
+	message = message || 'Page not found';
+	ErrorHttp.call(this, 404, message, {});
 };
 HttpNotFound.prototype = Object.create(ErrorHttp.prototype);
 HttpNotFound.prototype.constructor = HttpNotFound;

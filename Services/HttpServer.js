@@ -17,6 +17,10 @@ var HttpServer = function(kernel, container, dispatcher, config, log) {
 	this.config = config;
 	this.log = log;
 	this.debug = this.kernel.debug;
+	this.stats = {
+		nRequest: 0,
+		averageTime: null,
+	};
 };
 HttpServer.prototype = {
 	kernel: null,
@@ -25,6 +29,7 @@ HttpServer.prototype = {
 	config: null,
 	log: null,
 	debug: null,
+	stats: null,
 	
 	console: function(m) {
 		this.log.debug('Http.Server', m);
@@ -60,8 +65,9 @@ HttpServer.prototype = {
 	},
 	onHttpRequest: function(req, res, secure) {
 		if(this.debug === true) {
+			this.stats.nRequest++;
 			var d = new Date;
-			this.console('New request ('+d.toDateString()+' '+d.getHours()+':'+d.getMinutes()+':'+d.getSeconds()+'.'+d.getMilliseconds()+' | '+req.url+')');
+			this.console('New request n°'+this.stats.nRequest+' ('+d.toDateString()+' '+d.getHours()+':'+d.getMinutes()+':'+d.getSeconds()+'.'+d.getMilliseconds()+' | '+req.url+')');
 		}
 		var request = new Request(req, secure);
 		var response = new Response(res);
@@ -118,6 +124,7 @@ HttpServer.prototype = {
 		});
 	},
 	dispatchHttpResponse: function(request, response) {
+		var self = this;
 		this.dispatcher.dispatch('http.server.response', [request, response], function(request, response) {
 			if(response.hasResponse === false) {
 				response.setHeader('Content-Type', 'text/plain');
@@ -128,6 +135,15 @@ HttpServer.prototype = {
 			
 			response.res.statusCode = response.statusCode;
 			response.res.end(response.content);
+			if(self.debug === true) {
+				var executionTime = ((new Date).getTime()-request.startTime);
+				if(self.stats.averageTime === null) {
+					self.stats.averageTime = executionTime;
+				} else {
+					self.stats.averageTime = ((self.stats.averageTime*(self.stats.nRequest-1))+executionTime)/self.stats.nRequest;
+				}
+				self.console('End request n°'+self.stats.nRequest+' (this:'+executionTime+'ms|average:'+(Math.round(self.stats.averageTime*10)/10)+'ms)\n');
+			}
 		});
 	},
 };

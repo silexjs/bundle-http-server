@@ -1,6 +1,7 @@
 var Request = function(req, secure) {
 	this.req = req;
 	this.secure = secure;
+	this.startTime = (new Date).getTime();
 	
 	this.url = (secure===true?'https':'http')+'://'+req.headers.host+req.url;
 	
@@ -21,6 +22,7 @@ var Request = function(req, secure) {
 Request.prototype = {
 	req: null,
 	secure: null,
+	startTime: null,
 	url: null,
 	route: null,
 	controller: null,
