@@ -67,9 +67,9 @@ HttpServer.prototype = {
 		if(this.debug === true) {
 			this.stats.nRequest++;
 			var d = new Date;
-			this.console('New request n°'+this.stats.nRequest+' ('+d.toDateString()+' '+d.getHours()+':'+d.getMinutes()+':'+d.getSeconds()+'.'+d.getMilliseconds()+' | '+req.url+')');
+			this.console('New request n°'+this.stats.nRequest+' ('+d.toDateString()+' '+d.getHours()+':'+d.getMinutes()+':'+d.getSeconds()+'.'+d.getMilliseconds()+' | '+req.method+' '+req.url+')');
 		}
-		var request = new Request(req, secure);
+		var request = new Request(req, secure, this.container.get('silex.http_server.formidable'));
 		var response = new Response(res);
 		this.handleRaw(request, response);
 	},

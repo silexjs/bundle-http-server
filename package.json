@@ -1,6 +1,6 @@
 {
 	"name": "silex-bundle-http-server",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"description": "[SILEX][BUNDLE] Sets up an HTTP server",
 	"author": "Valentin Allaire <valentin@sitexw.fr>",
 	"license": "MIT",
@@ -12,6 +12,7 @@
 	],
 	"dependencies": {
 		"spaceload": "<2.0.0",
+		"formidable": "1.x",
 		"silex-component-routing": "0.0.x",
 		"silex-component-http": "0.0.x"
 	},

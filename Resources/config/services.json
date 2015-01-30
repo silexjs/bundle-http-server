@@ -13,6 +13,19 @@
 				{ "listener": "kernel.ready", "method": "onKernelReady", "priority": 10 }
 			],
 			"priority": 5
+		},
+		"silex.http_server.formidable": {
+			"class": "Silex.HttpServerBundle.Services.Formidable",
+			"arguments": [
+				{ "type": "service", "id": "kernel" },
+				{ "type": "service", "id": "kernel.container" },
+				{ "type": "service", "id": "kernel.config" },
+				{ "type": "service", "id": "kernel.log" }
+			],
+			"events": [
+				{ "listener": "kernel.ready", "method": "onKernelReady", "priority": 9 }
+			],
+			"priority": 10
 		}
 	}
 }
