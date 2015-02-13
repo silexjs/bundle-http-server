@@ -10,12 +10,13 @@ var ErrorHttp = USE('Silex.HttpServerBundle.Error.Http');
 var ErrorHttpNotFound = USE('Silex.HttpServerBundle.Error.HttpNotFound');
 
 
-var HttpServer = function(kernel, container, dispatcher, config, log) {
+var HttpServer = function(kernel, container, dispatcher, config, log, cache) {
 	this.kernel = kernel;
 	this.container = container;
 	this.dispatcher = dispatcher;
 	this.config = config;
 	this.log = log;
+	this.cache = cache;
 	this.debug = this.kernel.debug;
 	this.stats = {
 		nRequest: 0,
@@ -28,6 +29,7 @@ HttpServer.prototype = {
 	dispatcher: null,
 	config: null,
 	log: null,
+	cache: null,
 	debug: null,
 	stats: null,
 	
@@ -85,26 +87,7 @@ HttpServer.prototype = {
 							self.dispatchHttpResponse(request, response);
 						} else {
 							if(request.controller.found === true) {
-								var bundle = self.kernel.getBundle(request.controller.bundle);
-								if(bundle !== null) {
-									var file = pa.resolve(bundle.dir, './Controller/'+request.controller.controller+'Controller.js');
-									if(fs.existsSync(file) === true) {
-										var controllerClass = require(file);
-										if(controllerClass.prototype[request.controller.action+'Action'] !== undefined) {
-											var end = function(variables) {
-												self.dispatchHttpResponse(request, response);
-											};
-											var controllerInstance = new controllerClass(self.container, request, response);
-											controllerInstance[request.controller.action+'Action'](end, request.route.variables);
-										} else {
-											throw new Error('The action "'+request.controller.action+'" of the controller "'+request.controller.controller+'" does not exist. (config: "'+request.controller.bundle+':'+request.controller.controller+':'+request.controller.action+'")');
-										}
-									} else {
-										throw new Error('The controller "'+request.controller.controller+'" does not exist. Path sought: "'+file+'". (config: "'+request.controller.bundle+':'+request.controller.controller+':'+request.controller.action+'")');
-									}
-								} else {
-									throw new Error('The bundle "'+request.controller.bundle+'" does not exist. (config: "'+request.controller.bundle+':'+request.controller.controller+':'+request.controller.action+'")');
-								}
+								self.callController(request, response);
 							} else {
 								throw new ErrorHttpNotFound();
 							}
@@ -115,6 +98,39 @@ HttpServer.prototype = {
 				}, [self, 'handleError']);
 			}
 		}, [this, 'handleError']);
+	},
+	callController: function(request, response) {
+		var self = this;
+		var call = function(controllerClass) {
+			var end = function(variables) {
+				self.dispatchHttpResponse(request, response);
+			};
+			var controllerInstance = new controllerClass(self.container, request, response, end);
+			controllerInstance[request.controller.action+'Action'](end, request.route.variables);
+		};
+		var key = 'SilexHttpServerBundle.controller.'+request.controller.bundle+':'+request.controller.controller+':'+request.controller.action;
+		var controllerClass = this.cache.get(key);
+		if(controllerClass !== undefined) {
+			call(controllerClass);
+		} else {
+			var bundle = this.kernel.getBundle(request.controller.bundle);
+			if(bundle !== null) {
+				var file = pa.resolve(bundle.dir, './Controller/'+request.controller.controller+'Controller.js');
+				if(fs.existsSync(file) === true) {
+					controllerClass = require(file);
+					if(controllerClass.prototype[request.controller.action+'Action'] !== undefined) {
+						this.cache.set(key, controllerClass);
+						call(controllerClass);
+					} else {
+						throw new Error('The action "'+request.controller.action+'" of the controller "'+request.controller.controller+'" does not exist. (config: "'+request.controller.bundle+':'+request.controller.controller+':'+request.controller.action+'")');
+					}
+				} else {
+					throw new Error('The controller "'+request.controller.controller+'" does not exist. Path sought: "'+file+'". (config: "'+request.controller.bundle+':'+request.controller.controller+':'+request.controller.action+'")');
+				}
+			} else {
+				throw new Error('The bundle "'+request.controller.bundle+'" does not exist. (config: "'+request.controller.bundle+':'+request.controller.controller+':'+request.controller.action+'")');
+			}
+		}
 	},
 	handleError: function(e, request, response) {
 		var self = this;

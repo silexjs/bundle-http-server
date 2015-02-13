@@ -7,7 +7,8 @@
 				{ "type": "service", "id": "kernel.container" },
 				{ "type": "service", "id": "kernel.dispatcher" },
 				{ "type": "service", "id": "kernel.config" },
-				{ "type": "service", "id": "kernel.log" }
+				{ "type": "service", "id": "kernel.log" },
+				{ "type": "service", "id": "kernel.cache" }
 			],
 			"events": [
 				{ "listener": "kernel.ready", "method": "onKernelReady", "priority": 10 }
