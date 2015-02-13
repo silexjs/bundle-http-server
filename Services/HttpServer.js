@@ -106,7 +106,7 @@ HttpServer.prototype = {
 				self.dispatchHttpResponse(request, response);
 			};
 			var controllerInstance = new controllerClass(self.container, request, response, end);
-			controllerInstance[request.controller.action+'Action'](end, request.route.variables);
+			controllerInstance[request.controller.action+'Action'](request.route.variables);
 		};
 		var key = 'SilexHttpServerBundle.controller.'+request.controller.bundle+':'+request.controller.controller+':'+request.controller.action;
 		var controllerClass = this.cache.get(key);
