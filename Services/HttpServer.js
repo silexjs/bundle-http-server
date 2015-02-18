@@ -87,7 +87,9 @@ HttpServer.prototype = {
 							self.dispatchHttpResponse(request, response);
 						} else {
 							if(request.controller.found === true) {
-								self.callController(request, response);
+								self.callController(request, response, function() {
+									self.dispatchHttpResponse(request, response);
+								}, [request.route.variables]);
 							} else {
 								throw new ErrorHttpNotFound();
 							}
@@ -99,14 +101,11 @@ HttpServer.prototype = {
 			}
 		}, [this, 'handleError']);
 	},
-	callController: function(request, response) {
+	callController: function(request, response, end, variablesController) {
 		var self = this;
 		var call = function(controllerClass) {
-			var end = function(variables) {
-				self.dispatchHttpResponse(request, response);
-			};
 			var controllerInstance = new controllerClass(self.container, request, response, end);
-			controllerInstance[request.controller.action+'Action'](request.route.variables);
+			controllerInstance[request.controller.action+'Action'].apply(controllerInstance, variablesController);
 		};
 		var key = 'SilexHttpServerBundle.controller.'+request.controller.bundle+':'+request.controller.controller+':'+request.controller.action;
 		var controllerClass = this.cache.get(key);

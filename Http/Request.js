@@ -44,28 +44,30 @@ Request.prototype = {
 		}
 	},
 	varPost: function(cb) {
+		var self = this;
+		var back = function() {
+			cb((self.varPostData.fields || {}), (self.varPostData.files || {}));
+		};
 		if(this.req.method.toLowerCase() !== 'post') {
-			cb(this.varPostData || {});
+			back();
 			return;
 		}
 		if(this.varPostData === null) {
-			var self = this;
 			this.formidableService.parse(this.req, function(err, fields, files) {
-				if(err !== null) {
-					cb(self.varPostData || {});
+				if(self.varPostData !== null) {
+					return;
+				} else if(err !== null) {
+					back();
 					return;
 				}
-				self.varPostData = {};
-				for(var key in files) {
-					self.varPostData[key] = files[key];
-				}
-				for(var key in fields) {
-					self.varPostData[key] = fields[key];
-				}
-				cb(self.varPostData);
+				self.varPostData = {
+					files: files,
+					fields: fields,
+				};
+				back();
 			});
 		} else {
-			cb(this.varPostData);
+			back();
 		}
 	},
 };

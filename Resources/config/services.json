@@ -20,8 +20,7 @@
 			"arguments": [
 				{ "type": "service", "id": "kernel" },
 				{ "type": "service", "id": "kernel.container" },
-				{ "type": "service", "id": "kernel.config" },
-				{ "type": "service", "id": "kernel.log" }
+				{ "type": "service", "id": "kernel.config" }
 			],
 			"events": [
 				{ "listener": "kernel.ready", "method": "onKernelReady", "priority": 9 }
