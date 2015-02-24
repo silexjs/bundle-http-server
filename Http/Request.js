@@ -1,9 +1,10 @@
 var url = require('url');
 
 
-var Request = function(req, secure, formidableService) {
+var Request = function(req, secure, container) {
 	this.req = req;
 	this.secure = secure;
+	this.container = container;
 	this.startTime = (new Date).getTime();
 	
 	this.url = (secure===true?'https':'http')+'://'+req.headers.host+req.url;
@@ -22,17 +23,20 @@ var Request = function(req, secure, formidableService) {
 		controller: null,
 		action: null,
 	};
+	this.additionalData = {};
 	
-	this.formidableService = formidableService;
+	this.formidableService = this.container.get('silex.http_server.formidable');
 };
 Request.prototype = {
 	req: null,
 	secure: null,
+	container: null,
 	startTime: null,
 	url: null,
 	urlParse: null,
 	route: null,
 	controller: null,
+	additionalData: null,
 	formidableService: null,
 	varPostData: null,
 	
@@ -55,9 +59,6 @@ Request.prototype = {
 		if(this.varPostData === null) {
 			this.formidableService.parse(this.req, function(err, fields, files) {
 				if(self.varPostData !== null) {
-					return;
-				} else if(err !== null) {
-					back();
 					return;
 				}
 				self.varPostData = {

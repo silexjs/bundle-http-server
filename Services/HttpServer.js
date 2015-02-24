@@ -71,8 +71,8 @@ HttpServer.prototype = {
 			var d = new Date;
 			this.console('New request n°'+this.stats.nRequest+' ('+d.toDateString()+' '+d.getHours()+':'+d.getMinutes()+':'+d.getSeconds()+'.'+d.getMilliseconds()+' | '+req.method+' '+req.url+')');
 		}
-		var request = new Request(req, secure, this.container.get('silex.http_server.formidable'));
-		var response = new Response(res);
+		var request = new Request(req, secure, this.container);
+		var response = new Response(res, this.container);
 		this.handleRaw(request, response);
 	},
 	handleRaw: function(request, response) {

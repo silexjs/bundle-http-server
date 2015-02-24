@@ -1,8 +1,10 @@
-var Response = function(res) {
+var Response = function(res, container) {
 	this.res = res;
+	this.container = container;
 };
 Response.prototype = {
 	res: null,
+	container: null,
 	
 	hasResponse: false,
 	
