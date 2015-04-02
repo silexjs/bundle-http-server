@@ -1,5 +1,6 @@
 var pa = require('path');
 var fs = require('fs');
+var dm = require('domain');
 
 var Server = USE('Silex.Component.Http.Server');
 
@@ -66,13 +67,13 @@ HttpServer.prototype = {
 		});
 	},
 	onHttpRequest: function(req, res, secure) {
+		var request = new Request(req, secure, this.container);
+		var response = new Response(res, this.container);
 		if(this.debug === true) {
 			this.stats.nRequest++;
 			var d = new Date;
-			this.console('New request n°'+this.stats.nRequest+' ('+d.toDateString()+' '+d.getHours()+':'+d.getMinutes()+':'+d.getSeconds()+'.'+d.getMilliseconds()+' | '+req.method+' '+req.url+')');
+			this.console('New request n°'+this.stats.nRequest+' ('+d.toDateString()+' '+d.getHours()+':'+d.getMinutes()+':'+d.getSeconds()+'.'+d.getMilliseconds()+' | '+request.getClientIp()+' | '+req.method+' '+req.url+')');
 		}
-		var request = new Request(req, secure, this.container);
-		var response = new Response(res, this.container);
 		this.handleRaw(request, response);
 	},
 	handleRaw: function(request, response) {
@@ -82,7 +83,9 @@ HttpServer.prototype = {
 				self.dispatchHttpResponse(request, response);
 			} else {
 				self.dispatcher.dispatch('http.server.controller', [request, response], function(request, response) {
-					try {
+					dm.create().on('error', function(e) {
+						self.handleError(e, request, response);
+					}).run(function() {
 						if(response.hasResponse === true) {
 							self.dispatchHttpResponse(request, response);
 						} else {
@@ -94,9 +97,7 @@ HttpServer.prototype = {
 								throw new ErrorHttpNotFound();
 							}
 						}
-					} catch(e) {
-						self.handleError(e, request, response);
-					}
+					});
 				}, [self, 'handleError']);
 			}
 		}, [this, 'handleError']);

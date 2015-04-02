@@ -1,4 +1,5 @@
 var url = require('url');
+var getClientIp = require('request-ip').getClientIp;
 
 
 var Request = function(req, secure, container) {
@@ -39,6 +40,7 @@ Request.prototype = {
 	additionalData: null,
 	formidableService: null,
 	varPostData: null,
+	clientIp: null,
 	
 	varGet: function(name) {
 		if(name === undefined) {
@@ -50,7 +52,11 @@ Request.prototype = {
 	varPost: function(cb) {
 		var self = this;
 		var back = function() {
-			cb((self.varPostData.fields || {}), (self.varPostData.files || {}));
+			if(self.varPostData === null) {
+				cb({}, {});
+			} else {
+				cb(self.varPostData.fields, self.varPostData.files);
+			}
 		};
 		if(this.req.method.toLowerCase() !== 'post') {
 			back();
@@ -70,6 +76,21 @@ Request.prototype = {
 		} else {
 			back();
 		}
+	},
+	
+	getHeader: function(key, _default) {
+		var _return = this.req.headers[key];
+		if(_return !== undefined) {
+			return _return;
+		}
+		return _default;
+	},
+	
+	getClientIp: function() {
+		if(this.clientIp !== null) {
+			return this.clientIp;
+		}
+		return this.clientIp = getClientIp(this.req);
 	},
 };
 

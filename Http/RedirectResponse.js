@@ -8,7 +8,7 @@ RedirectResponse.prototype = {
 	
 	redirect: function(url, status) {
 		var status = status || 302;
-		
+		this.response.setHeader('Location', url);
 		this.response.setContentType('text/html');
 		this.response.content  = '<!DOCTYPE html>';
 		this.response.content += '<html>';

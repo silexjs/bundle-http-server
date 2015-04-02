@@ -11,7 +11,7 @@
 				{ "type": "service", "id": "kernel.cache" }
 			],
 			"events": [
-				{ "listener": "kernel.ready", "method": "onKernelReady", "priority": 10 }
+				{ "listener": "kernel.ready", "method": "onKernelReady", "priority": 100 }
 			],
 			"priority": 5
 		},
@@ -23,7 +23,7 @@
 				{ "type": "service", "id": "kernel.config" }
 			],
 			"events": [
-				{ "listener": "kernel.ready", "method": "onKernelReady", "priority": 9 }
+				{ "listener": "kernel.ready", "method": "onKernelReady", "priority": 10 }
 			],
 			"priority": 10
 		}
