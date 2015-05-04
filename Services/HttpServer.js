@@ -33,6 +33,7 @@ HttpServer.prototype = {
 	cache: null,
 	debug: null,
 	stats: null,
+	server: null,
 	
 	console: function(m) {
 		this.log.debug('Http.Server', m);
@@ -45,24 +46,27 @@ HttpServer.prototype = {
 	},
 	initServer: function(config, callback) {
 		var self = this;
-		var server = new Server({
+		this.server = new Server({
 			debug:	this.debug,
 			log:	function(m) { self.console(m); },
 		});
-		this.container.set('http.server', server);
+		this.container.set('http.server', this.server);
 		if(config.defaultCertificate !== undefined && config.defaultCertificate.key !== undefined && config.defaultCertificate.cert !== undefined ) {
-			server.addDefaultCertificate(config.defaultCertificate.key, config.defaultCertificate.cert);
+			self.server.addDefaultCertificate(config.defaultCertificate.key, config.defaultCertificate.cert);
 		}
 		for(var i in config.ports) {
-			server.add(config.ports[i]);
+			self.server.add(config.ports[i]);
 		}
 		this.dispatcher.dispatch('http.server.config', function() {
-			server.addEvent(function(req, res, secure) {
+			self.server.addEvent(function(req, res, secure) {
 				self.onHttpRequest(req, res, secure);
 			});
-			server.listen();
-			self.dispatcher.dispatch('http.server.ready', function() {
-				callback();
+			self.server.create();
+			self.dispatcher.dispatch('http.server.created', function() {
+				self.server.listen();
+				self.dispatcher.dispatch('http.server.ready', function() {
+					callback();
+				});
 			});
 		});
 	},
@@ -72,7 +76,7 @@ HttpServer.prototype = {
 		if(this.debug === true) {
 			this.stats.nRequest++;
 			var d = new Date;
-			this.console('New request n°'+this.stats.nRequest+' ('+d.toDateString()+' '+d.getHours()+':'+d.getMinutes()+':'+d.getSeconds()+'.'+d.getMilliseconds()+' | '+request.getClientIp()+' | '+req.method+' '+req.url+')');
+			this.console('New request n°'+this.stats.nRequest+' ('+d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+' '+d.getHours()+':'+d.getMinutes()+':'+d.getSeconds()+'.'+d.getMilliseconds()+' | '+request.getClientIp()+' | '+req.method+' '+req.url+')');
 		}
 		this.handleRaw(request, response);
 	},
