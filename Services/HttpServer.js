@@ -121,9 +121,14 @@ HttpServer.prototype = {
 			if(bundle !== null) {
 				var file = pa.resolve(bundle.dir, './Controller/'+request.controller.controller+'Controller.js');
 				if(fs.existsSync(file) === true) {
+					if(this.debug === true && require.cache[file] !== undefined) {
+						require.cache[file] = undefined;
+					}
 					controllerClass = require(file);
 					if(controllerClass.prototype[request.controller.action+'Action'] !== undefined) {
-						this.cache.set(key, controllerClass);
+						if(this.debug === false) {
+							this.cache.set(key, controllerClass);
+						}
 						call(controllerClass);
 					} else {
 						throw new Error('The action "'+request.controller.action+'" of the controller "'+request.controller.controller+'" does not exist. (config: "'+request.controller.bundle+':'+request.controller.controller+':'+request.controller.action+'")');
